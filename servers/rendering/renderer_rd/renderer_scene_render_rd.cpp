@@ -673,6 +673,11 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(const Rende
 	}
 
 	{
+		RENDER_TIMESTAMP("Process Pre Tonemap Compositor Effects");
+		_process_compositor_effects(RSE::COMPOSITOR_EFFECT_CALLBACK_TYPE_PRE_TONEMAP, p_render_data);
+	}
+
+	{
 		RENDER_TIMESTAMP("Tonemap");
 		RD::get_singleton()->draw_command_begin_label("Tonemap");
 
