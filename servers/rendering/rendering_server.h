@@ -430,7 +430,6 @@ public:
 
 	virtual void lightmap_set_probe_capture_update_speed(float p_speed) = 0;
 	virtual void lightmaps_set_filter(RSE::LightmapFilter p_filter) = 0;
-	virtual void lightmaps_set_bicubic_filter(bool p_enable) = 0;
 
 	virtual void lightmap_set_shadowmask_textures(RID p_lightmap, RID p_shadow) = 0;
 	virtual RSE::ShadowmaskMode lightmap_get_shadowmask_mode(RID p_lightmap) = 0;

@@ -1287,14 +1287,6 @@ void RendererSceneRenderRD::lightmaps_set_filter(RSE::LightmapFilter p_filter) {
 	_update_shader_quality_settings();
 }
 
-void RendererSceneRenderRD::lightmaps_set_bicubic_filter(bool p_enable) {
-	if (lightmap_filter_bicubic == p_enable) {
-		return;
-	}
-	lightmap_filter_bicubic = p_enable;
-	_update_shader_quality_settings();
-}
-
 void RendererSceneRenderRD::material_set_use_debanding(bool p_enable) {
 	material_use_debanding = p_enable;
 	_update_shader_quality_settings();
