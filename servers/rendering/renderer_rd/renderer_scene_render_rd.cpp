@@ -1270,11 +1270,20 @@ void RendererSceneRenderRD::decals_set_filter(RSE::DecalFilter p_filter) {
 	decals_filter = p_filter;
 	_update_shader_quality_settings();
 }
+
 void RendererSceneRenderRD::light_projectors_set_filter(RSE::LightProjectorFilter p_filter) {
 	if (light_projectors_filter == p_filter) {
 		return;
 	}
 	light_projectors_filter = p_filter;
+	_update_shader_quality_settings();
+}
+
+void RendererSceneRenderRD::lightmaps_set_filter(RSE::LightmapFilter p_filter) {
+	if (lightmap_filter == p_filter) {
+		return;
+	}
+	lightmap_filter = p_filter;
 	_update_shader_quality_settings();
 }
 
@@ -1841,7 +1850,7 @@ void RendererSceneRenderRD::init() {
 
 	decals_set_filter(RSE::DecalFilter(int(GLOBAL_GET("rendering/textures/decals/filter"))));
 	light_projectors_set_filter(RSE::LightProjectorFilter(int(GLOBAL_GET("rendering/textures/light_projectors/filter"))));
-	lightmaps_set_bicubic_filter(GLOBAL_GET("rendering/lightmapping/lightmap_gi/use_bicubic_filter"));
+	lightmaps_set_filter(GLOBAL_GET("rendering/lightmapping/lightmap_gi/filter"));
 	material_set_use_debanding(GLOBAL_GET("rendering/anti_aliasing/quality/use_debanding"));
 
 	cull_argument.set_page_pool(&cull_argument_pool);

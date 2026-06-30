@@ -1835,6 +1835,8 @@ void fragment_shader(in SceneData scene_data) {
 		uvw.xy = uv2 * instances.data[instance_index].lightmap_uv_scale.zw + instances.data[instance_index].lightmap_uv_scale.xy;
 		uvw.z = float(slice);
 
+		uint filter_mode = sc_lightmap_filter_mode();
+
 		if (uses_sh) {
 			uvw.z *= 4.0; //SH textures use 4 times more data
 			vec3 lm_light_l0;
@@ -1842,16 +1844,31 @@ void fragment_shader(in SceneData scene_data) {
 			vec3 lm_light_l1_0;
 			vec3 lm_light_l1p1;
 
-			if (sc_use_lightmap_bicubic_filter()) {
-				lm_light_l0 = textureArray_bicubic(lightmap_textures[ofs], uvw + vec3(0.0, 0.0, 0.0), lightmaps.data[ofs].light_texture_size).rgb;
-				lm_light_l1n1 = (textureArray_bicubic(lightmap_textures[ofs], uvw + vec3(0.0, 0.0, 1.0), lightmaps.data[ofs].light_texture_size).rgb - vec3(0.5)) * 2.0;
-				lm_light_l1_0 = (textureArray_bicubic(lightmap_textures[ofs], uvw + vec3(0.0, 0.0, 2.0), lightmaps.data[ofs].light_texture_size).rgb - vec3(0.5)) * 2.0;
-				lm_light_l1p1 = (textureArray_bicubic(lightmap_textures[ofs], uvw + vec3(0.0, 0.0, 3.0), lightmaps.data[ofs].light_texture_size).rgb - vec3(0.5)) * 2.0;
-			} else {
-				lm_light_l0 = textureLod(sampler2DArray(lightmap_textures[ofs], SAMPLER_LINEAR_CLAMP), uvw + vec3(0.0, 0.0, 0.0), 0.0).rgb;
-				lm_light_l1n1 = (textureLod(sampler2DArray(lightmap_textures[ofs], SAMPLER_LINEAR_CLAMP), uvw + vec3(0.0, 0.0, 1.0), 0.0).rgb - vec3(0.5)) * 2.0;
-				lm_light_l1_0 = (textureLod(sampler2DArray(lightmap_textures[ofs], SAMPLER_LINEAR_CLAMP), uvw + vec3(0.0, 0.0, 2.0), 0.0).rgb - vec3(0.5)) * 2.0;
-				lm_light_l1p1 = (textureLod(sampler2DArray(lightmap_textures[ofs], SAMPLER_LINEAR_CLAMP), uvw + vec3(0.0, 0.0, 3.0), 0.0).rgb - vec3(0.5)) * 2.0;
+			switch (filter_mode) {
+				case 0: {
+					// nearest
+					lm_light_l0 = textureLod(sampler2DArray(lightmap_textures[ofs], SAMPLER_NEAREST_CLAMP), uvw + vec3(0.0, 0.0, 0.0), 0.0).rgb;
+					lm_light_l1n1 = (textureLod(sampler2DArray(lightmap_textures[ofs], SAMPLER_NEAREST_CLAMP), uvw + vec3(0.0, 0.0, 1.0), 0.0).rgb - vec3(0.5)) * 2.0;
+					lm_light_l1_0 = (textureLod(sampler2DArray(lightmap_textures[ofs], SAMPLER_NEAREST_CLAMP), uvw + vec3(0.0, 0.0, 2.0), 0.0).rgb - vec3(0.5)) * 2.0;
+					lm_light_l1p1 = (textureLod(sampler2DArray(lightmap_textures[ofs], SAMPLER_NEAREST_CLAMP), uvw + vec3(0.0, 0.0, 3.0), 0.0).rgb - vec3(0.5)) * 2.0;
+					break;
+				}
+				case 1: {
+					// linear
+					lm_light_l0 = textureLod(sampler2DArray(lightmap_textures[ofs], SAMPLER_LINEAR_CLAMP), uvw + vec3(0.0, 0.0, 0.0), 0.0).rgb;
+					lm_light_l1n1 = (textureLod(sampler2DArray(lightmap_textures[ofs], SAMPLER_LINEAR_CLAMP), uvw + vec3(0.0, 0.0, 1.0), 0.0).rgb - vec3(0.5)) * 2.0;
+					lm_light_l1_0 = (textureLod(sampler2DArray(lightmap_textures[ofs], SAMPLER_LINEAR_CLAMP), uvw + vec3(0.0, 0.0, 2.0), 0.0).rgb - vec3(0.5)) * 2.0;
+					lm_light_l1p1 = (textureLod(sampler2DArray(lightmap_textures[ofs], SAMPLER_LINEAR_CLAMP), uvw + vec3(0.0, 0.0, 3.0), 0.0).rgb - vec3(0.5)) * 2.0;
+					break;
+				}
+				case 2: {
+					// bicubic
+					lm_light_l0 = textureArray_bicubic(lightmap_textures[ofs], uvw + vec3(0.0, 0.0, 0.0), lightmaps.data[ofs].light_texture_size).rgb;
+					lm_light_l1n1 = (textureArray_bicubic(lightmap_textures[ofs], uvw + vec3(0.0, 0.0, 1.0), lightmaps.data[ofs].light_texture_size).rgb - vec3(0.5)) * 2.0;
+					lm_light_l1_0 = (textureArray_bicubic(lightmap_textures[ofs], uvw + vec3(0.0, 0.0, 2.0), lightmaps.data[ofs].light_texture_size).rgb - vec3(0.5)) * 2.0;
+					lm_light_l1p1 = (textureArray_bicubic(lightmap_textures[ofs], uvw + vec3(0.0, 0.0, 3.0), lightmaps.data[ofs].light_texture_size).rgb - vec3(0.5)) * 2.0;
+					break;
+				}
 			}
 
 			vec3 n = normalize(lightmaps.data[ofs].normal_xform * indirect_normal);
@@ -1863,10 +1880,22 @@ void fragment_shader(in SceneData scene_data) {
 			ambient_light += lm_light_l1p1 * n.x * (lm_light_l0 * en * 4.0);
 
 		} else {
-			if (sc_use_lightmap_bicubic_filter()) {
-				ambient_light += textureArray_bicubic(lightmap_textures[ofs], uvw, lightmaps.data[ofs].light_texture_size).rgb * lightmaps.data[ofs].exposure_normalization;
-			} else {
-				ambient_light += textureLod(sampler2DArray(lightmap_textures[ofs], SAMPLER_LINEAR_CLAMP), uvw, 0.0).rgb * lightmaps.data[ofs].exposure_normalization;
+			switch (filter_mode) {
+				case 0: {
+					// nearest
+					ambient_light += textureLod(sampler2DArray(lightmap_textures[ofs], SAMPLER_NEAREST_CLAMP), uvw, 0.0).rgb * lightmaps.data[ofs].exposure_normalization;
+					break;
+				}
+				case 1: {
+					// linear
+					ambient_light += textureLod(sampler2DArray(lightmap_textures[ofs], SAMPLER_LINEAR_CLAMP), uvw, 0.0).rgb * lightmaps.data[ofs].exposure_normalization;
+					break;
+				}
+				case 2: {
+					// bicubic
+					ambient_light += textureArray_bicubic(lightmap_textures[ofs], uvw, lightmaps.data[ofs].light_texture_size).rgb * lightmaps.data[ofs].exposure_normalization;
+					break;
+				}
 			}
 		}
 	}

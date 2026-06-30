@@ -429,6 +429,7 @@ public:
 	virtual PackedInt32Array lightmap_get_probe_capture_bsp_tree(RID p_lightmap) const = 0;
 
 	virtual void lightmap_set_probe_capture_update_speed(float p_speed) = 0;
+	virtual void lightmaps_set_filter(RSE::LightmapFilter p_filter) = 0;
 	virtual void lightmaps_set_bicubic_filter(bool p_enable) = 0;
 
 	virtual void lightmap_set_shadowmask_textures(RID p_lightmap, RID p_shadow) = 0;
@@ -1105,6 +1106,7 @@ VARIANT_ENUM_CAST_EXT(RSE::LightOmniShadowMode, RenderingServer::LightOmniShadow
 VARIANT_ENUM_CAST_EXT(RSE::LightDirectionalShadowMode, RenderingServer::LightDirectionalShadowMode);
 VARIANT_ENUM_CAST_EXT(RSE::LightDirectionalSkyMode, RenderingServer::LightDirectionalSkyMode);
 VARIANT_ENUM_CAST_EXT(RSE::LightProjectorFilter, RenderingServer::LightProjectorFilter);
+VARIANT_ENUM_CAST_EXT(RSE::LightmapFilter, RenderingServer::LightmapFilter);
 VARIANT_ENUM_CAST_EXT(RSE::ReflectionProbeUpdateMode, RenderingServer::ReflectionProbeUpdateMode);
 VARIANT_ENUM_CAST_EXT(RSE::ReflectionProbeAmbientMode, RenderingServer::ReflectionProbeAmbientMode);
 VARIANT_ENUM_CAST_EXT(RSE::VoxelGIQuality, RenderingServer::VoxelGIQuality);
