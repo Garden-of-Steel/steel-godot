@@ -187,7 +187,6 @@ public:
 	virtual void decals_set_filter(RSE::DecalFilter p_filter) override {}
 	virtual void light_projectors_set_filter(RSE::LightProjectorFilter p_filter) override {}
 	virtual void lightmaps_set_filter(RSE::LightmapFilter p_filter) override {}
-	virtual void lightmaps_set_bicubic_filter(bool p_enable) override {}
 	virtual void material_set_use_debanding(bool p_enable) override {}
 
 	RasterizerSceneDummy() {}

@@ -73,8 +73,6 @@ public:
 	uint32_t directional_light_count = 0;
 	bool directional_light_soft_shadows = false;
 
-	bool lightmap_bicubic_filter = false;
-
 	float window_output_max_value = 1.0;
 
 	RenderingServerTypes::RenderInfo *render_info = nullptr;
