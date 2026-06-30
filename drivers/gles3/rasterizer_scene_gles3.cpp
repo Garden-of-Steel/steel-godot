@@ -3587,7 +3587,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters *p_params,
 								spec_constants |= SceneShaderGLES3::USE_SH_LIGHTMAP;
 							}
 
-							if (lightmap_bicubic_upscale) {
+							if (lightmap_filter == RSE::LIGHTMAP_FILTER_BICUBIC) {
 								spec_constants |= SceneShaderGLES3::LIGHTMAP_BICUBIC_FILTER;
 							}
 						} else if (inst->lightmap_sh) {
@@ -3620,7 +3620,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters *p_params,
 							spec_constants |= SceneShaderGLES3::USE_LIGHTMAP;
 							disable_lightmaps = false;
 
-							if (lightmap_bicubic_upscale) {
+							if (lightmap_filter == RSE::LIGHTMAP_FILTER_BICUBIC) {
 								spec_constants |= SceneShaderGLES3::LIGHTMAP_BICUBIC_FILTER;
 							}
 						}
@@ -3738,7 +3738,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters *p_params,
 							Vector4 uv_scale(inst->lightmap_uv_scale.position.x, inst->lightmap_uv_scale.position.y, inst->lightmap_uv_scale.size.x, inst->lightmap_uv_scale.size.y);
 							material_storage->shaders.scene_shader.version_set_uniform(SceneShaderGLES3::LIGHTMAP_UV_SCALE, uv_scale, shader->version, instance_variant, spec_constants);
 
-							if (lightmap_bicubic_upscale) {
+							if (lightmap_filter == RSE::LIGHTMAP_FILTER_BICUBIC) {
 								Vector2 light_texture_size(lm->light_texture_size.x, lm->light_texture_size.y);
 								material_storage->shaders.scene_shader.version_set_uniform(SceneShaderGLES3::LIGHTMAP_TEXTURE_SIZE, light_texture_size, shader->version, instance_variant, spec_constants);
 							}
@@ -3789,7 +3789,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters *p_params,
 						Vector4 uv_scale(inst->lightmap_uv_scale.position.x, inst->lightmap_uv_scale.position.y, inst->lightmap_uv_scale.size.x, inst->lightmap_uv_scale.size.y);
 						material_storage->shaders.scene_shader.version_set_uniform(SceneShaderGLES3::LIGHTMAP_UV_SCALE, uv_scale, shader->version, instance_variant, spec_constants);
 
-						if (lightmap_bicubic_upscale) {
+						if (lightmap_filter == RSE::LIGHTMAP_FILTER_BICUBIC) {
 							Vector2 light_texture_size(lm->light_texture_size.x, lm->light_texture_size.y);
 							material_storage->shaders.scene_shader.version_set_uniform(SceneShaderGLES3::LIGHTMAP_TEXTURE_SIZE, light_texture_size, shader->version, instance_variant, spec_constants);
 						}
@@ -4518,6 +4518,13 @@ void RasterizerSceneGLES3::decals_set_filter(RSE::DecalFilter p_filter) {
 void RasterizerSceneGLES3::light_projectors_set_filter(RSE::LightProjectorFilter p_filter) {
 }
 
+void RasterizerSceneGLES3::lightmaps_set_filter(RSE::LightmapFilter p_filter) {
+	if (lightmap_filter == p_filter) {
+		return;
+	}
+	lightmap_filter = p_filter;
+}
+
 void RasterizerSceneGLES3::lightmaps_set_bicubic_filter(bool p_enable) {
 	lightmap_bicubic_upscale = p_enable;
 }
@@ -4539,7 +4546,7 @@ RasterizerSceneGLES3::RasterizerSceneGLES3() {
 
 	positional_soft_shadow_filter_set_quality((RSE::ShadowQuality)(int)GLOBAL_GET("rendering/lights_and_shadows/positional_shadow/soft_shadow_filter_quality"));
 	directional_soft_shadow_filter_set_quality((RSE::ShadowQuality)(int)GLOBAL_GET("rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality"));
-	lightmaps_set_bicubic_filter(GLOBAL_GET("rendering/lightmapping/lightmap_gi/use_bicubic_filter"));
+	lightmaps_set_filter(GLOBAL_GET("rendering/lightmapping/lightmap_gi/filter"));
 
 	{
 		// Setup Lights

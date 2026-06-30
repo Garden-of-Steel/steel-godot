@@ -2541,6 +2541,7 @@ void RenderingServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("light_area_set_normalize_energy", "light", "enable"), &RenderingServer::light_area_set_normalize_energy);
 
 	ClassDB::bind_method(D_METHOD("light_projectors_set_filter", "filter"), &RenderingServer::light_projectors_set_filter);
+	ClassDB::bind_method(D_METHOD("lightmaps_set_filter", "filter"), &RenderingServer::lightmaps_set_filter);
 	ClassDB::bind_method(D_METHOD("lightmaps_set_bicubic_filter", "enable"), &RenderingServer::lightmaps_set_bicubic_filter);
 
 	BIND_ENUM_CONSTANT(RSE::LIGHT_PROJECTOR_FILTER_NEAREST);
@@ -2549,6 +2550,10 @@ void RenderingServer::_bind_methods() {
 	BIND_ENUM_CONSTANT(RSE::LIGHT_PROJECTOR_FILTER_LINEAR_MIPMAPS);
 	BIND_ENUM_CONSTANT(RSE::LIGHT_PROJECTOR_FILTER_NEAREST_MIPMAPS_ANISOTROPIC);
 	BIND_ENUM_CONSTANT(RSE::LIGHT_PROJECTOR_FILTER_LINEAR_MIPMAPS_ANISOTROPIC);
+
+	BIND_ENUM_CONSTANT(RSE::LIGHTMAP_FILTER_NEAREST);
+	BIND_ENUM_CONSTANT(RSE::LIGHTMAP_FILTER_LINEAR);
+	BIND_ENUM_CONSTANT(RSE::LIGHTMAP_FILTER_BICUBIC);
 
 	BIND_ENUM_CONSTANT(RSE::LIGHT_DIRECTIONAL);
 	BIND_ENUM_CONSTANT(RSE::LIGHT_OMNI);
@@ -3788,7 +3793,7 @@ void RenderingServer::init() {
 
 	GLOBAL_DEF(PropertyInfo(Variant::FLOAT, "rendering/lightmapping/probe_capture/update_speed", PROPERTY_HINT_RANGE, "0.001,256,0.001"), 15);
 	GLOBAL_DEF(PropertyInfo(Variant::FLOAT, "rendering/lightmapping/primitive_meshes/texel_size", PROPERTY_HINT_RANGE, "0.001,100,0.001"), 0.2);
-	GLOBAL_DEF("rendering/lightmapping/lightmap_gi/use_bicubic_filter", true);
+	GLOBAL_DEF(PropertyInfo(Variant::INT, "rendering/lightmapping/lightmap_gi/filter", PROPERTY_HINT_ENUM, "Nearest (Fastest),Linear (Fastest),Bicubic (Fast)"), 2);
 
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "rendering/global_illumination/sdfgi/probe_ray_count", PROPERTY_HINT_ENUM, "8 (Fastest),16,32,64,96,128 (Slowest)"), 1);
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "rendering/global_illumination/sdfgi/frames_to_converge", PROPERTY_HINT_ENUM, "5 (Less Latency but Lower Quality),10,15,20,25,30 (More Latency but Higher Quality)"), 5);
@@ -3797,7 +3802,7 @@ void RenderingServer::init() {
 	GLOBAL_DEF_RST("rendering/environment/fog/use_legacy_blending", false);
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "rendering/environment/volumetric_fog/volume_size", PROPERTY_HINT_RANGE, "16,512,1"), 64);
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "rendering/environment/volumetric_fog/volume_depth", PROPERTY_HINT_RANGE, "16,512,1"), 64);
-	GLOBAL_DEF(PropertyInfo(Variant::INT, "rendering/environment/volumetric_fog/use_filter", PROPERTY_HINT_ENUM, "No (Faster),Yes (Higher Quality)"), 1);
+	GLOBAL_DEF(PropertyInfo(Variant::INT, "rendering/environment/volumetric_fog/use_filter", PROPERTY_HINT_ENUM, "No (Faster),Yes (Higher Quality)"), RSE::LIGHTMAP_FILTER_BICUBIC);
 
 	GLOBAL_DEF_RST(PropertyInfo(Variant::INT, "rendering/limits/spatial_indexer/update_iterations_per_frame", PROPERTY_HINT_RANGE, "0,1024,1"), 10);
 	GLOBAL_DEF_RST(PropertyInfo(Variant::INT, "rendering/limits/spatial_indexer/threaded_cull_minimum_instances", PROPERTY_HINT_RANGE, "32,65536,1"), 1000);
