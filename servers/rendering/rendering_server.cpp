@@ -2542,7 +2542,6 @@ void RenderingServer::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("light_projectors_set_filter", "filter"), &RenderingServer::light_projectors_set_filter);
 	ClassDB::bind_method(D_METHOD("lightmaps_set_filter", "filter"), &RenderingServer::lightmaps_set_filter);
-	ClassDB::bind_method(D_METHOD("lightmaps_set_bicubic_filter", "enable"), &RenderingServer::lightmaps_set_bicubic_filter);
 
 	BIND_ENUM_CONSTANT(RSE::LIGHT_PROJECTOR_FILTER_NEAREST);
 	BIND_ENUM_CONSTANT(RSE::LIGHT_PROJECTOR_FILTER_LINEAR);

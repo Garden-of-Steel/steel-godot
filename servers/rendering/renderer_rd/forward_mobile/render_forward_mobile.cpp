@@ -3546,7 +3546,7 @@ void RenderForwardMobile::_update_shader_quality_settings() {
 			light_projectors_get_filter() == RSE::LIGHT_PROJECTOR_FILTER_NEAREST_MIPMAPS_ANISOTROPIC ||
 			light_projectors_get_filter() == RSE::LIGHT_PROJECTOR_FILTER_LINEAR_MIPMAPS_ANISOTROPIC;
 
-	specialization.use_lightmap_bicubic_filter = lightmap_filter_bicubic_get();
+	specialization.use_lightmap_bicubic_filter = lightmap_filter_get() == RSE::LIGHTMAP_FILTER_BICUBIC;
 	specialization.use_material_debanding = material_use_debanding_get();
 	specialization.luminance_multiplier = 2.0f;
 	scene_shader.set_default_specialization(specialization);
