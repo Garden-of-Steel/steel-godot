@@ -140,6 +140,7 @@ private:
 	float *directional_soft_shadow_kernel = nullptr;
 	float *penumbra_shadow_kernel = nullptr;
 	float *soft_shadow_kernel = nullptr;
+	RSE::LightmapFilter lightmap_filter = RSE::LIGHTMAP_FILTER_BICUBIC; 
 	bool lightmap_filter_bicubic = false;
 	int directional_penumbra_shadow_samples = 0;
 	int directional_soft_shadow_samples = 0;
@@ -272,6 +273,7 @@ public:
 
 	virtual void decals_set_filter(RSE::DecalFilter p_filter) override;
 	virtual void light_projectors_set_filter(RSE::LightProjectorFilter p_filter) override;
+	virtual void lightmaps_set_filter(RSE::LightmapFilter p_filter) override;
 	virtual void lightmaps_set_bicubic_filter(bool p_enable) override;
 	virtual void material_set_use_debanding(bool p_enable) override;
 
@@ -306,6 +308,9 @@ public:
 	}
 	_FORCE_INLINE_ bool lightmap_filter_bicubic_get() const {
 		return lightmap_filter_bicubic;
+	}
+	_FORCE_INLINE_ int lightmap_filter_get() const {
+		return lightmap_filter;
 	}
 	_FORCE_INLINE_ int directional_soft_shadow_samples_get() const {
 		return directional_soft_shadow_samples;

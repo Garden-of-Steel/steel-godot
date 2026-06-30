@@ -154,6 +154,10 @@ bool sc_material_feedback() {
 	return ((sc_packed_1() >> 7) & 1U) != 0;
 }
 
+uint sc_lightmap_filter_mode() {
+    return (sc_packed_1() >> 8) & 3U;
+}
+
 float sc_luminance_multiplier() {
 	// Not used in clustered renderer but we share some code with the mobile renderer that requires this.
 	return 1.0;
