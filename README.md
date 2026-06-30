@@ -1,3 +1,10 @@
+# Steel Godot
+**Steel Godot is the engine used by [Garden of Steel](https://gardenofsteel.studio/).**
+## Features
+- Nearest sampling of baked lighting
+- Pre tonemap Compositor Effect callback
+
+
 # Godot Engine
 
 <p align="center">
