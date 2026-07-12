@@ -161,6 +161,7 @@ public:
 	virtual StringName get_doc_class_name() const = 0;
 	virtual Vector<DocData::ClassDoc> get_documentation() const = 0;
 	virtual String get_class_icon_path() const = 0;
+	virtual String get_class_icon3d_path() const { return String(); } 
 	virtual PropertyInfo get_class_category() const;
 #endif // TOOLS_ENABLED
 

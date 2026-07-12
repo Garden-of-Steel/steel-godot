@@ -62,6 +62,7 @@
 #include "editor/scene/3d/gizmos/geometry_instance_3d_gizmo_plugin.h"
 #include "editor/scene/3d/gizmos/gpu_particles_3d_gizmo_plugin.h"
 #include "editor/scene/3d/gizmos/gpu_particles_collision_3d_gizmo_plugin.h"
+#include "editor/scene/3d/gizmos/icon3d_gizmo_plugin.h"
 #include "editor/scene/3d/gizmos/label_3d_gizmo_plugin.h"
 #include "editor/scene/3d/gizmos/light_3d_gizmo_plugin.h"
 #include "editor/scene/3d/gizmos/lightmap_gi_gizmo_plugin.h"
@@ -10121,6 +10122,7 @@ void Node3DEditor::_register_all_gizmos() {
 	add_gizmo_plugin(Ref<FogVolumeGizmoPlugin>(memnew(FogVolumeGizmoPlugin)));
 	add_gizmo_plugin(Ref<TwoBoneIK3DGizmoPlugin>(memnew(TwoBoneIK3DGizmoPlugin)));
 	add_gizmo_plugin(Ref<ChainIK3DGizmoPlugin>(memnew(ChainIK3DGizmoPlugin)));
+	add_gizmo_plugin(Ref<Icon3DGizmoPlugin>(memnew(Icon3DGizmoPlugin)));
 }
 
 void Node3DEditor::_bind_methods() {

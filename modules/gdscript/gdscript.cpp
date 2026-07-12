@@ -492,6 +492,10 @@ void GDScript::_clear_doc() {
 String GDScript::get_class_icon_path() const {
 	return simplified_icon_path;
 }
+
+String GDScript::get_class_icon3d_path() const {
+	return simplified_icon3d_path;
+}
 #endif
 
 bool GDScript::_update_exports(bool *r_err, bool p_recursive_call, PlaceHolderScriptInstance *p_instance_to_update, bool p_base_exports_changed) {

@@ -184,6 +184,7 @@ private:
 	StringName global_name; // `class_name`.
 	String fully_qualified_name;
 	String simplified_icon_path;
+	String simplified_icon3d_path;
 	SelfList<GDScript> script_list;
 
 	SelfList<GDScriptFunctionState>::List pending_func_states;
@@ -295,6 +296,7 @@ public:
 	virtual StringName get_doc_class_name() const override { return doc_class_name; }
 	virtual Vector<DocData::ClassDoc> get_documentation() const override { return docs; }
 	virtual String get_class_icon_path() const override;
+	virtual String get_class_icon3d_path() const override;
 #endif // TOOLS_ENABLED
 
 	virtual Error reload(bool p_keep_state = false) override;

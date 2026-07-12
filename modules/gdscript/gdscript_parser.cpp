@@ -145,6 +145,7 @@ GDScriptParser::GDScriptParser() {
 		// Script annotations.
 		register_annotation(MethodInfo("@tool"), AnnotationInfo::SCRIPT, &GDScriptParser::tool_annotation);
 		register_annotation(MethodInfo("@icon", PropertyInfo(Variant::STRING, "icon_path")), AnnotationInfo::SCRIPT, &GDScriptParser::icon_annotation);
+		register_annotation(MethodInfo("@icon3d", PropertyInfo(Variant::STRING, "icon3d_path")), AnnotationInfo::SCRIPT, &GDScriptParser::icon3d_annotation);
 		register_annotation(MethodInfo("@static_unload"), AnnotationInfo::SCRIPT, &GDScriptParser::static_unload_annotation);
 		register_annotation(MethodInfo("@abstract"), AnnotationInfo::SCRIPT | AnnotationInfo::CLASS | AnnotationInfo::FUNCTION, &GDScriptParser::abstract_annotation);
 		// Onready annotation.
@@ -4484,6 +4485,37 @@ bool GDScriptParser::icon_annotation(AnnotationNode *p_annotation, Node *p_targe
 	}
 
 	return true;
+}
+
+bool GDScriptParser::icon3d_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class) {
+    ERR_FAIL_COND_V_MSG(p_target->type != Node::CLASS, false, R"("@icon3d" annotation can only be applied to classes.)");
+    ERR_FAIL_COND_V(p_annotation->resolved_arguments.is_empty(), false);
+
+    ClassNode *class_node = static_cast<ClassNode *>(p_target);
+    String path = p_annotation->resolved_arguments[0];
+
+#ifdef DEBUG_ENABLED
+    if (!class_node->icon3d_path.is_empty()) {
+        push_error(R"("@icon3d" annotation can only be used once.)", p_annotation);
+        return false;
+    }
+    if (path.is_empty()) {
+        push_error(R"("@icon3d" annotation argument must contain the path to the icon.)", p_annotation->arguments[0]);
+        return false;
+    }
+#endif // DEBUG_ENABLED
+
+    class_node->icon3d_path = path;
+
+    if (path.is_empty() || path.is_absolute_path()) {
+        class_node->simplified_icon3d_path = path.simplify_path();
+    } else if (path.is_relative_path()) {
+        class_node->simplified_icon3d_path = script_path.get_base_dir().path_join(path).simplify_path();
+    } else {
+        class_node->simplified_icon3d_path = path;
+    }
+
+    return true;
 }
 
 bool GDScriptParser::static_unload_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class) {
