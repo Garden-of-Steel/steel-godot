@@ -3,6 +3,7 @@
 ## Features
 - Nearest sampling of baked lighting
 - Pre tonemap Compositor Effect callback
+- User definable billboard icons for custom node types
 
 
 # Godot Engine
