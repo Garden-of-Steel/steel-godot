@@ -45,10 +45,18 @@ public:
 		REPLICATION_MODE_ON_CHANGE,
 	};
 
+	struct InterpolationData {
+		Variant start_value;
+		Variant end_value;
+		double weight = 0.0;
+	};
+
 private:
 	struct ReplicationProperty {
 		NodePath name;
 		bool spawn = true;
+		bool interpolate = false;
+		InterpolationData interp_data;
 		ReplicationMode mode = REPLICATION_MODE_ALWAYS;
 
 		bool operator==(const ReplicationProperty &p_to) {
@@ -64,6 +72,7 @@ private:
 
 	List<ReplicationProperty> properties;
 	List<NodePath> spawn_props;
+	List<NodePath> interpolate_props;
 	List<NodePath> sync_props;
 	List<NodePath> watch_props;
 	bool dirty = false;
@@ -90,6 +99,11 @@ public:
 	bool property_get_spawn(const NodePath &p_path);
 	void property_set_spawn(const NodePath &p_path, bool p_enabled);
 
+	bool property_get_interpolate(const NodePath &p_path);
+	void property_set_interpolate(const NodePath &p_path, bool p_enabled);
+	InterpolationData property_get_interpolate_data(const NodePath &p_path);
+	void property_set_interpolate_data(const NodePath &p_path, const InterpolationData &p_data);
+
 	bool property_get_sync(const NodePath &p_path);
 	void property_set_sync(const NodePath &p_path, bool p_enabled);
 
@@ -100,6 +114,7 @@ public:
 	void property_set_replication_mode(const NodePath &p_path, ReplicationMode p_mode);
 
 	const List<NodePath> &get_spawn_properties();
+	const List<NodePath> &get_interpolate_properties();
 	const List<NodePath> &get_sync_properties();
 	const List<NodePath> &get_watch_properties();
 

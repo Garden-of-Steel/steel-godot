@@ -59,8 +59,11 @@ bool SceneReplicationConfig::_set(const StringName &p_name, const Variant &p_val
 		if (what == "spawn") {
 			property_set_spawn(prop.name, p_value);
 			return true;
+		} else if (what == "interpolate") {
+			property_set_interpolate(prop.name, p_value);
+			return true;
 		} else if (what == "sync") {
-			// Deprecated.
+			// Deprecated.	
 			property_set_sync(prop.name, p_value);
 			return true;
 		} else if (what == "watch") {
@@ -86,6 +89,9 @@ bool SceneReplicationConfig::_get(const StringName &p_name, Variant &r_ret) cons
 		} else if (what == "spawn") {
 			r_ret = prop.spawn;
 			return true;
+		} else if (what == "interpolate") {
+			r_ret = prop.interpolate;
+			return true;
 		} else if (what == "replication_mode") {
 			r_ret = prop.mode;
 			return true;
@@ -97,7 +103,8 @@ bool SceneReplicationConfig::_get(const StringName &p_name, Variant &r_ret) cons
 void SceneReplicationConfig::_get_property_list(List<PropertyInfo> *p_list) const {
 	for (int i = 0; i < properties.size(); i++) {
 		p_list->push_back(PropertyInfo(Variant::STRING, "properties/" + itos(i) + "/path", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL));
-		p_list->push_back(PropertyInfo(Variant::STRING, "properties/" + itos(i) + "/spawn", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL));
+		p_list->push_back(PropertyInfo(Variant::BOOL, "properties/" + itos(i) + "/spawn", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL));
+		p_list->push_back(PropertyInfo(Variant::BOOL, "properties/" + itos(i) + "/interpolate", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL));
 		p_list->push_back(PropertyInfo(Variant::INT, "properties/" + itos(i) + "/replication_mode", PROPERTY_HINT_ENUM, "Never,Always,On Change", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL));
 	}
 }
@@ -107,6 +114,7 @@ void SceneReplicationConfig::reset_state() {
 	properties.clear();
 	sync_props.clear();
 	spawn_props.clear();
+	interpolate_props.clear();
 	watch_props.clear();
 }
 
@@ -180,6 +188,35 @@ void SceneReplicationConfig::property_set_spawn(const NodePath &p_path, bool p_e
 	dirty = true;
 }
 
+bool SceneReplicationConfig::property_get_interpolate(const NodePath &p_path) {
+	List<ReplicationProperty>::Element *E = properties.find(p_path);
+	ERR_FAIL_COND_V(!E, false);
+	return E->get().interpolate;
+}
+
+void SceneReplicationConfig::property_set_interpolate(const NodePath &p_path, bool p_enabled) {
+	List<ReplicationProperty>::Element *E = properties.find(p_path);
+	ERR_FAIL_COND(!E);
+	if (E->get().interpolate == p_enabled) {
+		return;
+	}
+	E->get().interpolate = p_enabled;
+	dirty = true;
+}
+
+SceneReplicationConfig::InterpolationData SceneReplicationConfig::property_get_interpolate_data(const NodePath &p_path) {
+	List<ReplicationProperty>::Element *E = properties.find(p_path);
+	ERR_FAIL_COND_V(!E, InterpolationData());
+	return E->get().interp_data;
+}
+
+void SceneReplicationConfig::property_set_interpolate_data(const NodePath &p_path, const InterpolationData &p_data) {
+	List<ReplicationProperty>::Element *E = properties.find(p_path);
+	ERR_FAIL_COND(!E);
+	E->get().interp_data = p_data;
+	dirty = true;
+}
+
 bool SceneReplicationConfig::property_get_sync(const NodePath &p_path) {
 	List<ReplicationProperty>::Element *E = properties.find(p_path);
 	ERR_FAIL_COND_V(!E, false);
@@ -231,10 +268,14 @@ void SceneReplicationConfig::_update() {
 	dirty = false;
 	sync_props.clear();
 	spawn_props.clear();
+	interpolate_props.clear();
 	watch_props.clear();
 	for (const ReplicationProperty &prop : properties) {
 		if (prop.spawn) {
 			spawn_props.push_back(prop.name);
+		}
+		if (prop.interpolate) {
+			interpolate_props.push_back(prop.name);
 		}
 		switch (prop.mode) {
 			case REPLICATION_MODE_ALWAYS:
@@ -254,6 +295,13 @@ const List<NodePath> &SceneReplicationConfig::get_spawn_properties() {
 		_update();
 	}
 	return spawn_props;
+}
+
+const List<NodePath> &SceneReplicationConfig::get_interpolate_properties() {
+	if (dirty) {
+		_update();
+	}
+	return interpolate_props;
 }
 
 const List<NodePath> &SceneReplicationConfig::get_sync_properties() {
@@ -278,6 +326,8 @@ void SceneReplicationConfig::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("property_get_index", "path"), &SceneReplicationConfig::property_get_index);
 	ClassDB::bind_method(D_METHOD("property_get_spawn", "path"), &SceneReplicationConfig::property_get_spawn);
 	ClassDB::bind_method(D_METHOD("property_set_spawn", "path", "enabled"), &SceneReplicationConfig::property_set_spawn);
+	ClassDB::bind_method(D_METHOD("property_get_interpolate", "path"), &SceneReplicationConfig::property_get_interpolate);
+	ClassDB::bind_method(D_METHOD("property_set_interpolate", "path", "enabled"), &SceneReplicationConfig::property_set_interpolate);
 	ClassDB::bind_method(D_METHOD("property_get_replication_mode", "path"), &SceneReplicationConfig::property_get_replication_mode);
 	ClassDB::bind_method(D_METHOD("property_set_replication_mode", "path", "mode"), &SceneReplicationConfig::property_set_replication_mode);
 
