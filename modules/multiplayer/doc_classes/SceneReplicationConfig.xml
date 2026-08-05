@@ -51,6 +51,13 @@
 				Returns [code]true[/code] if the property identified by the given [param path] is configured to be synchronized on spawn.
 			</description>
 		</method>
+		<method name="property_get_interpolate">
+			<return type="bool" />
+			<param index="0" name="path" type="NodePath" />
+			<description>
+				Returns [code]true[/code] if the property identified by the given [param path] is configured to be interpolated.
+			</description>
+		</method>
 		<method name="property_get_sync" deprecated="Use [method property_get_replication_mode] instead.">
 			<return type="bool" />
 			<param index="0" name="path" type="NodePath" />

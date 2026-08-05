@@ -258,7 +258,7 @@ Error SceneReplicationInterface::on_replication_start(Object *p_obj, Variant p_c
 			if (consumed > 0) {
 				pending_buffer += consumed;
 				pending_buffer_size -= consumed;
-				err = MultiplayerSynchronizer::set_state(props, node, vars);
+				err = sync->set_state(props, node, vars);
 				ERR_FAIL_COND_V(err, err);
 			}
 		}
@@ -788,7 +788,7 @@ Error SceneReplicationInterface::on_delta_receive(int p_from, const uint8_t *p_b
 		Error err = MultiplayerAPI::decode_and_decompress_variants(vars, p_buffer + ofs, size, consumed);
 		ERR_FAIL_COND_V(err != OK, err);
 		ERR_FAIL_COND_V(uint32_t(consumed) != size, ERR_INVALID_DATA);
-		err = MultiplayerSynchronizer::set_state(props, node, vars);
+		err = sync->set_state(props, node, vars);
 		ERR_FAIL_COND_V(err != OK, err);
 		ofs += size;
 		sync->emit_signal(SNAME("delta_synchronized"));
@@ -825,7 +825,7 @@ void SceneReplicationInterface::_send_sync(int p_peer, const HashSet<ObjectID> &
 		Vector<Variant> vars;
 		Vector<const Variant *> varp;
 		const List<NodePath> props(sync->get_replication_config_ptr()->get_sync_properties());
-		Error err = MultiplayerSynchronizer::get_state(props, node, vars, varp);
+		Error err = sync->get_state(props, node, vars, varp);
 		ERR_CONTINUE_MSG(err != OK, "Unable to retrieve sync state.");
 		err = MultiplayerAPI::encode_and_compress_variants(varp.ptrw(), varp.size(), nullptr, size);
 		ERR_CONTINUE_MSG(err != OK, "Unable to encode sync state.");
@@ -889,7 +889,7 @@ Error SceneReplicationInterface::on_sync_receive(int p_from, const uint8_t *p_bu
 		int consumed;
 		Error err = MultiplayerAPI::decode_and_decompress_variants(vars, &p_buffer[ofs], size, consumed);
 		ERR_FAIL_COND_V(err, err);
-		err = MultiplayerSynchronizer::set_state(props, node, vars);
+		err = sync->set_state(props, node, vars);
 		ERR_FAIL_COND_V(err, err);
 		ofs += size;
 		sync->emit_signal(SNAME("synchronized"));

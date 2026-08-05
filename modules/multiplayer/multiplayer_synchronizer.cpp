@@ -32,6 +32,7 @@
 
 #include "core/config/engine.h"
 #include "core/object/class_db.h"
+#include "core/variant/variant_utility.h" 
 #include "scene/main/multiplayer_api.h"
 
 Object *MultiplayerSynchronizer::_get_prop_target(Object *p_obj, const NodePath &p_path) {
@@ -83,7 +84,7 @@ void MultiplayerSynchronizer::_update_process() {
 	if (!node) {
 		return;
 	}
-	set_process_internal(false);
+	set_process_internal(true);
 	set_physics_process_internal(false);
 	if (!visibility_filters.size()) {
 		return;
@@ -97,6 +98,40 @@ void MultiplayerSynchronizer::_update_process() {
 			break;
 		case VISIBILITY_PROCESS_NONE:
 			break;
+	}
+}
+
+void MultiplayerSynchronizer::_update_interpolation() {
+	ERR_FAIL_COND(replication_config.is_null());
+	Node *node = get_root_node();
+	if (!node) {
+		return;
+	}
+	if (node->is_multiplayer_authority()) {
+		return;
+	}
+	double interval = get_replication_interval();
+	if (interval <= 0.0) {
+		interval = get_process_delta_time();
+	}
+	const double weight_step = get_process_delta_time() / interval;
+	const List<NodePath> interp_props(replication_config->get_interpolate_properties());
+	for (const NodePath &prop : interp_props) {
+		SceneReplicationConfig::InterpolationData interp_data = replication_config->property_get_interpolate_data(prop);
+		if (interp_data.weight < 1.0) {
+			interp_data.weight += weight_step;
+			if (interp_data.weight > 1.0) {
+				interp_data.weight = 1.0;
+			}
+			replication_config->property_set_interpolate_data(prop, interp_data);
+		}
+		Object *obj = _get_prop_target(node, prop);
+		ERR_FAIL_NULL(obj);
+		Callable::CallError err;
+		Variant state = VariantUtilityFunctions::lerp(interp_data.start_value, interp_data.end_value, interp_data.weight, err);
+		if (err.error == Callable::CallError::CALL_OK) {
+			obj->set_indexed(prop.get_subnames(), state);
+		}
 	}
 }
 
@@ -177,7 +212,18 @@ Error MultiplayerSynchronizer::set_state(const List<NodePath> &p_properties, Obj
 	for (const NodePath &prop : p_properties) {
 		Object *obj = _get_prop_target(p_obj, prop);
 		ERR_FAIL_NULL_V(obj, FAILED);
-		obj->set_indexed(prop.get_subnames(), p_state[i]);
+		if (replication_config->property_get_interpolate(prop)) {
+			SceneReplicationConfig::InterpolationData interp_data = replication_config->property_get_interpolate_data(prop);
+			interp_data.start_value = interp_data.end_value;
+			interp_data.end_value = p_state[i];
+			interp_data.weight = 0.0;
+			if (interp_data.start_value.get_type() == Variant::NIL) {
+				interp_data.start_value = interp_data.end_value;
+			}
+			replication_config->property_set_interpolate_data(prop, interp_data);
+		} else {
+			obj->set_indexed(prop.get_subnames(), p_state[i]);
+		}
 		i += 1;
 	}
 	return OK;
@@ -303,7 +349,10 @@ void MultiplayerSynchronizer::_notification(int p_what) {
 			_stop();
 		} break;
 
-		case NOTIFICATION_INTERNAL_PROCESS:
+		case NOTIFICATION_INTERNAL_PROCESS: {
+			_update_interpolation();
+		} break;
+
 		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
 			update_visibility(0);
 		} break;
