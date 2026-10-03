@@ -825,7 +825,7 @@ void SceneReplicationInterface::_send_sync(int p_peer, const HashSet<ObjectID> &
 		Vector<Variant> vars;
 		Vector<const Variant *> varp;
 		const List<NodePath> props(sync->get_replication_config_ptr()->get_sync_properties());
-		Error err = sync->get_state(props, node, vars, varp);
+		Error err = MultiplayerSynchronizer::get_state(props, node, vars, varp);
 		ERR_CONTINUE_MSG(err != OK, "Unable to retrieve sync state.");
 		err = MultiplayerAPI::encode_and_compress_variants(varp.ptrw(), varp.size(), nullptr, size);
 		ERR_CONTINUE_MSG(err != OK, "Unable to encode sync state.");

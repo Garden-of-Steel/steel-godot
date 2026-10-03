@@ -51,6 +51,12 @@ private:
 		Variant value;
 	};
 
+	struct Interpolator {
+		Variant start_value;
+		Variant end_value;
+		double weight = 0.0;
+	};
+
 	Ref<SceneReplicationConfig> replication_config;
 	NodePath root_path = NodePath(".."); // Start with parent, like with AnimationPlayer.
 	uint64_t sync_interval_usec = 0;
@@ -60,6 +66,7 @@ private:
 	HashSet<int> peer_visibility;
 	Vector<Watcher> watchers;
 	uint64_t last_watch_usec = 0;
+	HashMap<NodePath, Interpolator> interpolators;
 
 	ObjectID root_node_cache;
 	uint64_t last_sync_usec = 0;

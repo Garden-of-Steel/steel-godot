@@ -204,19 +204,6 @@ void SceneReplicationConfig::property_set_interpolate(const NodePath &p_path, bo
 	dirty = true;
 }
 
-SceneReplicationConfig::InterpolationData SceneReplicationConfig::property_get_interpolate_data(const NodePath &p_path) {
-	List<ReplicationProperty>::Element *E = properties.find(p_path);
-	ERR_FAIL_COND_V(!E, InterpolationData());
-	return E->get().interp_data;
-}
-
-void SceneReplicationConfig::property_set_interpolate_data(const NodePath &p_path, const InterpolationData &p_data) {
-	List<ReplicationProperty>::Element *E = properties.find(p_path);
-	ERR_FAIL_COND(!E);
-	E->get().interp_data = p_data;
-	dirty = true;
-}
-
 bool SceneReplicationConfig::property_get_sync(const NodePath &p_path) {
 	List<ReplicationProperty>::Element *E = properties.find(p_path);
 	ERR_FAIL_COND_V(!E, false);
