@@ -101,12 +101,18 @@ void MultiplayerSynchronizer::_update_process() {
 	}
 }
 
-void MultiplayerSynchronizer::_update_interpolation() {
+void MultiplayerSynchronizer::_update_interpolation() { // Structurely mirrors _watch_changes() but with different logic.
 	ERR_FAIL_COND(replication_config.is_null());
-	Node *node = get_root_node();
-	if (!node) {
+	const List<NodePath> interp_props(replication_config->get_interpolate_properties());
+	if (interp_props.size() != interpolators.size()) {
+		interpolators.clear();
+		interpolators.reserve(interp_props.size());
+	}
+	if (interp_props.is_empty()) {
 		return;
 	}
+	Node *node = get_root_node();
+	ERR_FAIL_NULL(node);
 	if (node->is_multiplayer_authority()) {
 		return;
 	}
@@ -115,20 +121,31 @@ void MultiplayerSynchronizer::_update_interpolation() {
 		interval = get_process_delta_time();
 	}
 	const double weight_step = get_process_delta_time() / interval;
-	const List<NodePath> interp_props(replication_config->get_interpolate_properties());
 	for (const NodePath &prop : interp_props) {
-		SceneReplicationConfig::InterpolationData interp_data = replication_config->property_get_interpolate_data(prop);
-		if (interp_data.weight < 1.0) {
-			interp_data.weight += weight_step;
-			if (interp_data.weight > 1.0) {
-				interp_data.weight = 1.0;
-			}
-			replication_config->property_set_interpolate_data(prop, interp_data);
-		}
+		bool valid = false;
 		Object *obj = _get_prop_target(node, prop);
-		ERR_FAIL_NULL(obj);
+		ERR_CONTINUE_MSG(!obj, vformat("Node not found for property '%s'.", prop));
+		Variant value = obj->get_indexed(prop.get_subnames(), &valid);
+		ERR_CONTINUE_MSG(!valid, vformat("Property '%s' not found.", prop));
+
+		Interpolator *interpolator = interpolators.getptr(prop);
+		if (!interpolator) {
+			Interpolator &new_interpolator = interpolators[prop];
+			new_interpolator.start_value = value;
+			new_interpolator.end_value = value;
+			new_interpolator.weight = 1.0;
+			interpolator = &new_interpolator;
+		}
+
+		if (interpolator->weight < 1.0) {
+			interpolator->weight += weight_step;
+			if (interpolator->weight > 1.0) {
+				interpolator->weight = 1.0;
+			}
+		}
+
 		Callable::CallError err;
-		Variant state = VariantUtilityFunctions::lerp(interp_data.start_value, interp_data.end_value, interp_data.weight, err);
+		Variant state = VariantUtilityFunctions::lerp(interpolator->start_value, interpolator->end_value, interpolator->weight, err);
 		if (err.error == Callable::CallError::CALL_OK) {
 			obj->set_indexed(prop.get_subnames(), state);
 		}
@@ -212,22 +229,20 @@ Error MultiplayerSynchronizer::set_state(const List<NodePath> &p_properties, Obj
 	for (const NodePath &prop : p_properties) {
 		Object *obj = _get_prop_target(p_obj, prop);
 		ERR_FAIL_NULL_V(obj, FAILED);
-		if (replication_config->property_get_interpolate(prop)) {
-			SceneReplicationConfig::InterpolationData interp_data = replication_config->property_get_interpolate_data(prop);
-			interp_data.start_value = interp_data.end_value;
-			interp_data.end_value = p_state[i];
-			interp_data.weight = 0.0;
-			if (interp_data.start_value.get_type() == Variant::NIL) {
-				interp_data.start_value = interp_data.end_value;
-			}
-			replication_config->property_set_interpolate_data(prop, interp_data);
-		} else {
+		if (interpolators.has(prop)) {
+			Interpolator &interpolator = interpolators[prop];
+			interpolator.start_value = obj->get_indexed(prop.get_subnames());
+			interpolator.end_value = p_state[i];
+			interpolator.weight = 0.0;
+		}
+		else{
 			obj->set_indexed(prop.get_subnames(), p_state[i]);
 		}
 		i += 1;
 	}
 	return OK;
 }
+
 
 bool MultiplayerSynchronizer::is_visibility_public() const {
 	return peer_visibility.has(0);

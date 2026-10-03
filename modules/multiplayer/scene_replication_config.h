@@ -45,18 +45,11 @@ public:
 		REPLICATION_MODE_ON_CHANGE,
 	};
 
-	struct InterpolationData {
-		Variant start_value;
-		Variant end_value;
-		double weight = 0.0;
-	};
-
 private:
 	struct ReplicationProperty {
 		NodePath name;
 		bool spawn = true;
 		bool interpolate = false;
-		InterpolationData interp_data;
 		ReplicationMode mode = REPLICATION_MODE_ALWAYS;
 
 		bool operator==(const ReplicationProperty &p_to) {
@@ -101,8 +94,6 @@ public:
 
 	bool property_get_interpolate(const NodePath &p_path);
 	void property_set_interpolate(const NodePath &p_path, bool p_enabled);
-	InterpolationData property_get_interpolate_data(const NodePath &p_path);
-	void property_set_interpolate_data(const NodePath &p_path, const InterpolationData &p_data);
 
 	bool property_get_sync(const NodePath &p_path);
 	void property_set_sync(const NodePath &p_path, bool p_enabled);
