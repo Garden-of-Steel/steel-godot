@@ -3028,6 +3028,7 @@ void Node3DEditor::_register_all_gizmos() {
 	add_gizmo_plugin(Ref<FogVolumeGizmoPlugin>(memnew(FogVolumeGizmoPlugin)));
 	add_gizmo_plugin(Ref<TwoBoneIK3DGizmoPlugin>(memnew(TwoBoneIK3DGizmoPlugin)));
 	add_gizmo_plugin(Ref<ChainIK3DGizmoPlugin>(memnew(ChainIK3DGizmoPlugin)));
+	add_gizmo_plugin(Ref<Icon3DGizmoPlugin>(memnew(Icon3DGizmoPlugin)));
 }
 
 void Node3DEditor::_bind_methods() {
