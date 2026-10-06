@@ -104,7 +104,7 @@ void MultiplayerSynchronizer::_update_process() {
 void MultiplayerSynchronizer::_update_interpolation() { // Structurely mirrors _watch_changes() but with different logic.
 	ERR_FAIL_COND(replication_config.is_null());
 	const List<NodePath> interp_props(replication_config->get_interpolate_properties());
-	if (interp_props.size() != interpolators.size()) {
+	if (static_cast<size_t>(interp_props.size()) != interpolators.size()) {
 		interpolators.clear();
 		interpolators.reserve(interp_props.size());
 	}
