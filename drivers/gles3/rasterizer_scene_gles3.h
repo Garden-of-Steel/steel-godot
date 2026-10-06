@@ -798,7 +798,7 @@ protected:
 
 	bool glow_bicubic_upscale = false;
 
-	RSE::LightmapFilter lightmap_filter = RSE::LIGHTMAP_FILTER_BICUBIC; 
+	RSE::LightmapFilter lightmap_filter = RSE::LIGHTMAP_FILTER_BICUBIC;
 
 	/* Sky */
 

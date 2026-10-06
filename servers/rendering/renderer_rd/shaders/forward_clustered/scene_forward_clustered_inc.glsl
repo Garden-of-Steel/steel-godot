@@ -155,7 +155,7 @@ bool sc_material_feedback() {
 }
 
 uint sc_lightmap_filter_mode() {
-    return (sc_packed_1() >> 8) & 3U;
+	return (sc_packed_1() >> 8) & 3U;
 }
 
 float sc_luminance_multiplier() {

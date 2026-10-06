@@ -140,7 +140,7 @@ private:
 	float *directional_soft_shadow_kernel = nullptr;
 	float *penumbra_shadow_kernel = nullptr;
 	float *soft_shadow_kernel = nullptr;
-	RSE::LightmapFilter lightmap_filter = RSE::LIGHTMAP_FILTER_BICUBIC; 
+	RSE::LightmapFilter lightmap_filter = RSE::LIGHTMAP_FILTER_BICUBIC;
 	int directional_penumbra_shadow_samples = 0;
 	int directional_soft_shadow_samples = 0;
 	int penumbra_shadow_samples = 0;

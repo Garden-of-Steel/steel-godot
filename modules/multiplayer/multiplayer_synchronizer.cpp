@@ -32,7 +32,7 @@
 
 #include "core/config/engine.h"
 #include "core/object/class_db.h"
-#include "core/variant/variant_utility.h" 
+#include "core/variant/variant_utility.h"
 #include "scene/main/multiplayer_api.h"
 
 Object *MultiplayerSynchronizer::_get_prop_target(Object *p_obj, const NodePath &p_path) {
@@ -234,15 +234,13 @@ Error MultiplayerSynchronizer::set_state(const List<NodePath> &p_properties, Obj
 			interpolator.start_value = obj->get_indexed(prop.get_subnames());
 			interpolator.end_value = p_state[i];
 			interpolator.weight = 0.0;
-		}
-		else{
+		} else {
 			obj->set_indexed(prop.get_subnames(), p_state[i]);
 		}
 		i += 1;
 	}
 	return OK;
 }
-
 
 bool MultiplayerSynchronizer::is_visibility_public() const {
 	return peer_visibility.has(0);

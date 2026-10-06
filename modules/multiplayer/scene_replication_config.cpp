@@ -63,7 +63,7 @@ bool SceneReplicationConfig::_set(const StringName &p_name, const Variant &p_val
 			property_set_interpolate(prop.name, p_value);
 			return true;
 		} else if (what == "sync") {
-			// Deprecated.	
+			// Deprecated.
 			property_set_sync(prop.name, p_value);
 			return true;
 		} else if (what == "watch") {
