@@ -32,9 +32,28 @@ runs:
     - name: Extract API
       shell: sh
       run: ${{ inputs.bin }} --headless --dump-gdextension-interface --dump-extension-api
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v7
+      with:
+        submodules: recursive
+        repository: godotengine/godot-cpp
+        ref: ${{ inputs.godot-cpp-branch }}
+        path: godot-cpp
 
+    - name: Extract API
+      shell: sh
+      run: ${{ inputs.bin }} --headless --dump-gdextension-interface --dump-extension-api
+    
     - name: SCons Build
       shell: sh
       env:
         SCONS_CACHE: ${{ inputs.scons-cache }}
-      run: scons --directory=./godot-cpp/test "gdextension_dir=${{ github.workspace }}" ${{ inputs.scons-flags }}
+      run: |
+        scons --directory=./godot-cpp \
+          "gdextension_dir=${{ github.workspace }}" \
+          -j2 \
+          ${{ inputs.scons-flags }}
+
