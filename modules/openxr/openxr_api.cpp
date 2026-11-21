@@ -183,7 +183,7 @@ void OpenXRAPI::OpenXRSwapChainInfo::free() {
 	}
 }
 
-bool OpenXRAPI::OpenXRSwapChainInfo::acquire(bool &p_should_render) {
+bool OpenXRAPI::OpenXRSwapChainInfo::acquire(bool &r_should_render) {
 	GodotProfileZone("OpenXR: acquire swapchain");
 	ERR_FAIL_COND_V(image_acquired, true); // This was not released when it should be, error out and reuse...
 
@@ -201,7 +201,7 @@ bool OpenXRAPI::OpenXRSwapChainInfo::acquire(bool &p_should_render) {
 		result = openxr_api->xrAcquireSwapchainImage(swapchain, &swapchain_image_acquire_info, &image_index);
 		if (!XR_UNQUALIFIED_SUCCESS(result)) {
 			// Make sure end_frame knows we need to submit an empty frame
-			p_should_render = false;
+			r_should_render = false;
 
 			if (XR_FAILED(result)) {
 				// Unexpected failure, log this!
@@ -231,7 +231,7 @@ bool OpenXRAPI::OpenXRSwapChainInfo::acquire(bool &p_should_render) {
 
 	if (!XR_UNQUALIFIED_SUCCESS(result)) {
 		// Make sure end_frame knows we need to submit an empty frame
-		p_should_render = false;
+		r_should_render = false;
 
 		if (XR_FAILED(result)) {
 			// Unexpected failure, log this!
@@ -339,6 +339,15 @@ String OpenXRAPI::get_error_string(XrResult p_result) const {
 	} else {
 		return String(resultString);
 	}
+}
+
+void OpenXRAPI::report_frame_loop_error(XrResult &r_last_error, XrResult p_result, const char *p_what) {
+	if (p_result == r_last_error) {
+		print_verbose(vformat("OpenXR: %s, again [%s]", p_what, get_error_string(p_result)));
+		return;
+	}
+	r_last_error = p_result;
+	print_error(vformat("OpenXR: %s [%s]. Repeats are only printed with --verbose.", p_what, get_error_string(p_result)));
 }
 
 String OpenXRAPI::get_swapchain_format_name(int64_t p_swapchain_format) const {
@@ -1906,7 +1915,10 @@ void OpenXRAPI::cleanup_extension_wrappers() {
 #ifndef DISABLE_DEPRECATED
 		// Fix crash when the extension wrapper comes from GDExtension.
 		OpenXRExtensionWrapperExtension *gdextension_extension_wrapper = dynamic_cast<OpenXRExtensionWrapperExtension *>(extension_wrapper);
-		memdelete(gdextension_extension_wrapper);
+		if (gdextension_extension_wrapper) {
+			memdelete(gdextension_extension_wrapper);
+			extension_wrapper = nullptr; // Avoid double free.
+		}
 #endif
 		memdelete(extension_wrapper);
 	}
@@ -2049,11 +2061,10 @@ void OpenXRAPI::update_head_tracking() {
 		};
 	}
 
-	bool should_submit_spatial_container_layers = false;
 	if (is_spatial_container_enabled()) {
 		OpenXRSpatialContainerExtension *spatial_container_ext = OpenXRSpatialContainerExtension::get_singleton();
 		ERR_FAIL_NULL(spatial_container_ext);
-		result = spatial_container_ext->locate_spatial_container_views(views.ptr(), view_pose_valid, should_submit_spatial_container_layers);
+		result = spatial_container_ext->locate_spatial_container_views(views.ptr(), view_pose_valid);
 		if (XR_FAILED(result)) {
 			print_line("OpenXR: Couldn't locate spatial container views [", get_error_string(result), "]");
 			return;
@@ -2144,7 +2155,7 @@ void OpenXRAPI::update_head_tracking() {
 		f[v].w = view_fovs[v].angleDown;
 	}
 
-	set_render_state_view_poses(view_pose_valid, should_submit_spatial_container_layers, orientations, positions, fovs);
+	set_render_state_view_poses(view_pose_valid, orientations, positions, fovs);
 }
 
 XRPose::TrackingConfidence OpenXRAPI::get_head_center(Transform3D &r_transform, Vector3 &r_linear_velocity, Vector3 &r_angular_velocity) {
@@ -2482,7 +2493,7 @@ void OpenXRAPI::_set_render_display_info_rt(XrTime p_predicted_display_time, boo
 	OpenXRAPI *openxr_api = OpenXRAPI::get_singleton();
 	ERR_FAIL_NULL(openxr_api);
 	openxr_api->render_state.predicted_display_time = p_predicted_display_time;
-	openxr_api->render_state.should_render = p_should_render || openxr_api->render_state.should_submit_spatial_container_layers;
+	openxr_api->render_state.should_render = p_should_render || is_spatial_container_enabled();
 }
 
 void OpenXRAPI::_set_render_environment_blend_mode_rt(int32_t p_environment_blend_mode) {
@@ -2520,7 +2531,7 @@ void OpenXRAPI::_set_render_state_render_region_rt(const Rect2i &p_render_region
 	openxr_api->render_state.render_region = p_render_region;
 }
 
-void OpenXRAPI::_set_render_state_view_poses(bool p_is_valid, bool p_should_submit_spatial_container_layers, const PackedVector4Array &p_orientations, const PackedVector3Array &p_positions, const PackedVector4Array &p_fovs) {
+void OpenXRAPI::_set_render_state_view_poses(bool p_is_valid, const PackedVector4Array &p_orientations, const PackedVector3Array &p_positions, const PackedVector4Array &p_fovs) {
 	ERR_NOT_ON_RENDER_THREAD;
 
 	OpenXRAPI *openxr_api = OpenXRAPI::get_singleton();
@@ -2534,8 +2545,6 @@ void OpenXRAPI::_set_render_state_view_poses(bool p_is_valid, bool p_should_subm
 			print_verbose("OpenXR View pose became valid");
 		}
 	}
-
-	openxr_api->render_state.should_submit_spatial_container_layers = p_should_submit_spatial_container_layers;
 
 	if (p_is_valid) {
 		const uint32_t view_count = openxr_api->render_state.view_count;
@@ -2655,11 +2664,11 @@ void OpenXRAPI::set_render_state_render_region(const Rect2i &p_render_region) {
 	rendering_server->call_on_render_thread(callable_mp_static(&OpenXRAPI::_set_render_state_render_region_rt).bind(p_render_region));
 }
 
-void OpenXRAPI::set_render_state_view_poses(bool p_is_valid, bool p_should_submit_spatial_container_layers, const PackedVector4Array &p_orientations, const PackedVector3Array &p_positions, const PackedVector4Array &p_fovs) {
+void OpenXRAPI::set_render_state_view_poses(bool p_is_valid, const PackedVector4Array &p_orientations, const PackedVector3Array &p_positions, const PackedVector4Array &p_fovs) {
 	RenderingServer *rendering_server = RenderingServer::get_singleton();
 	ERR_FAIL_NULL(rendering_server);
 
-	rendering_server->call_on_render_thread(callable_mp_static(&OpenXRAPI::_set_render_state_view_poses).bind(p_is_valid, p_should_submit_spatial_container_layers, p_orientations, p_positions, p_fovs));
+	rendering_server->call_on_render_thread(callable_mp_static(&OpenXRAPI::_set_render_state_view_poses).bind(p_is_valid, p_orientations, p_positions, p_fovs));
 }
 
 void OpenXRAPI::set_render_state_near_and_far(uint32_t p_view, double p_z_near, double p_z_far) {
@@ -2730,7 +2739,7 @@ bool OpenXRAPI::process() {
 
 	XrResult result = xrWaitFrame(session, &frame_wait_info, &frame_state);
 	if (XR_FAILED(result)) {
-		print_line("OpenXR: xrWaitFrame() was not successful [", get_error_string(result), "]");
+		report_frame_loop_error(last_wait_frame_error, result, "xrWaitFrame() was not successful");
 
 		// reset just in case
 		frame_state.predictedDisplayTime = 0;
@@ -2741,6 +2750,7 @@ bool OpenXRAPI::process() {
 
 		return false;
 	}
+	last_wait_frame_error = XR_SUCCESS;
 
 	if (frame_state.predictedDisplayPeriod > 500000000) {
 		// display period more then 0.5 seconds? must be wrong data
@@ -2806,9 +2816,10 @@ void OpenXRAPI::pre_render() {
 	};
 	XrResult result = xrBeginFrame(session, &frame_begin_info);
 	if (XR_FAILED(result)) {
-		print_line("OpenXR: failed to begin frame [", get_error_string(result), "]");
+		report_frame_loop_error(render_state.last_begin_frame_error, result, "failed to begin frame");
 		return;
 	}
+	render_state.last_begin_frame_error = XR_SUCCESS;
 
 	// Reset this, we haven't found a viewport for output yet
 	render_state.has_xr_viewport = false;
@@ -2835,9 +2846,11 @@ bool OpenXRAPI::pre_draw_viewport(RID p_render_target) {
 	// region of it, so we only need to recreate it when it needs to grow.
 	bool should_recreate_swapchain = recommended_size.width > render_state.main_swapchain_size.width || recommended_size.height > render_state.main_swapchain_size.height;
 
+	bool use_vrs_xr = (RSG::texture_storage->render_target_get_vrs_mode(p_render_target) == RSE::VIEWPORT_VRS_XR);
+
 	OpenXRFBFoveationExtension *fov_ext = OpenXRFBFoveationExtension::get_singleton();
 	if (fov_ext) {
-		bool subsampled_images_enabled = fov_ext->is_foveation_with_subsampled_images_enabled();
+		bool subsampled_images_enabled = fov_ext->is_foveation_with_subsampled_images_enabled() && use_vrs_xr;
 
 		// Mark subsampled images as enabled on the render target (so we try to use them).
 		RSG::texture_storage->render_target_set_subsampled_enabled(p_render_target, subsampled_images_enabled);
@@ -2845,7 +2858,7 @@ bool OpenXRAPI::pre_draw_viewport(RID p_render_target) {
 		// But check if they are "allowed", because they may not work if we are using
 		// any incompatible rendering features.
 		bool subsampled_images_allowed = RSG::texture_storage->render_target_is_subsampled_allowed(p_render_target);
-		fov_ext->set_foveation_with_subsampled_images_active(subsampled_images_allowed);
+		fov_ext->set_foveation_with_subsampled_images_active(subsampled_images_allowed && use_vrs_xr);
 
 		bool use_subsampled_images = subsampled_images_enabled && subsampled_images_allowed;
 		if (render_state.use_subsampled_images != use_subsampled_images) {
@@ -2876,6 +2889,15 @@ bool OpenXRAPI::pre_draw_viewport(RID p_render_target) {
 		if (!render_state.main_swapchains[i].is_image_acquired() && render_state.main_swapchains[i].get_swapchain() != XR_NULL_HANDLE) {
 			if (!render_state.main_swapchains[i].acquire(render_state.should_render)) {
 				return false;
+			}
+		}
+	}
+
+	if (fov_ext && fov_ext->is_enabled() && fov_ext->get_foveation_level() > 0 && render_state.main_swapchains[OPENXR_SWAPCHAIN_COLOR].get_density_map().is_valid()) {
+		if (render_state.use_vrs_xr != use_vrs_xr) {
+			render_state.use_vrs_xr = use_vrs_xr;
+			if (!use_vrs_xr) {
+				WARN_PRINT("OpenXR: Foveation is enabled, but the viewport's VRS mode is not set to XR, so foveated rendering will have no effect.");
 			}
 		}
 	}
@@ -3015,7 +3037,7 @@ void OpenXRAPI::end_frame() {
 	// - should_render set to true
 	// - a valid view pose for projection_views[eye].pose to submit layer
 	// - an image to render
-	if (!render_state.should_render || !render_state.view_pose_valid || !render_state.main_swapchains[OPENXR_SWAPCHAIN_COLOR].is_image_acquired()) {
+	if (!is_spatial_container_enabled() && (!render_state.should_render || !render_state.view_pose_valid || !render_state.main_swapchains[OPENXR_SWAPCHAIN_COLOR].is_image_acquired())) {
 		// submit 0 layers when we shouldn't render
 		XrFrameEndInfo frame_end_info = {
 			XR_TYPE_FRAME_END_INFO, // type
@@ -3027,9 +3049,10 @@ void OpenXRAPI::end_frame() {
 		};
 		result = xrEndFrame(session, &frame_end_info);
 		if (XR_FAILED(result)) {
-			print_line("OpenXR: rendering skipped and failed to end frame! [", get_error_string(result), "]");
+			report_frame_loop_error(render_state.last_end_frame_error, result, "rendering skipped and failed to end frame");
 			return;
 		}
+		render_state.last_end_frame_error = XR_SUCCESS;
 
 		end_debug_label_region(); // Session frame #
 
@@ -3135,9 +3158,10 @@ void OpenXRAPI::end_frame() {
 	};
 	result = xrEndFrame(session, &frame_end_info);
 	if (XR_FAILED(result)) {
-		print_line("OpenXR: failed to end frame! [", get_error_string(result), "]");
+		report_frame_loop_error(render_state.last_end_frame_error, result, "failed to end frame");
 		return;
 	}
+	render_state.last_end_frame_error = XR_SUCCESS;
 
 	end_debug_label_region(); // Session frame #
 }
@@ -3205,7 +3229,7 @@ Rect2i OpenXRAPI::get_combined_render_region() {
 	return region.intersection(maximum_region);
 }
 
-bool OpenXRAPI::is_spatial_container_enabled() const {
+bool OpenXRAPI::is_spatial_container_enabled() {
 	OpenXRSpatialContainerExtension *spatial_container_ext = OpenXRSpatialContainerExtension::get_singleton();
 	return spatial_container_ext != nullptr && spatial_container_ext->is_enabled();
 }
